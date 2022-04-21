@@ -1,7 +1,7 @@
 import tkinter
 from tkinter import messagebox
 import random
-import pyperclip
+# import pyperclip
 
 
 FONT_INFO = ("Arial", 16)
@@ -27,24 +27,78 @@ def gen_password():
 
     password = "".join(password_list)
     password_entry.insert(0, password)
-    # Pyperclip automatically ctrl+c the new password
-    pyperclip.copy(password)
+    # Pyperclip automatically ctrl+c the new password 
+    # pyperclip.copy(password)
 
 # ---------------------------- SAVE PASSWORD ------------------------------- #
+# def save_password():
+#     website = website_entry.get()
+#     email = email_un_entry.get()
+#     pw = password_entry.get()
+    
+#     if len(website) == 0 or len(pw) == 0 or len(email) == 0:
+#         messagebox.showerror(title="Oh noes...", message="You shant leave any fields empty")
+#     else:
+#         # is_ok = messagebox.askokcancel(title=website, message=f"These are the details entered:\nWebsite: {website}\nEmail: {email}\nPassword: {pw}\nIs it okay to save?")
+#         # if is_ok:
+#             with open("data.txt", "a") as d:
+#                 d.write(f"{website} | {email} | {pw} \n")
+#             password_entry.delete(0, 'end')
+#             website_entry.delete(0, 'end')
+#             messagebox.showinfo(title="Accepted", message="Accepted")
+            
+# ----------------------- SAVE PASSWORD WITH JSON (BETTER) ----------------------- #
+import json
+
 def save_password():
     website = website_entry.get()
     email = email_un_entry.get()
     pw = password_entry.get()
+    new_data = {website: {
+                    "email": email,
+                    "password": pw
+                }}
     
     if len(website) == 0 or len(pw) == 0 or len(email) == 0:
         messagebox.showerror(title="Oh noes...", message="You shant leave any fields empty")
     else:
-        is_ok = messagebox.askokcancel(title=website, message=f"These are the details entered:\nWebsite: {website}\nEmail: {email}\nPassword: {pw}\nIs it okay to save?")
-        if is_ok:
-            with open("data.txt", "a") as d:
-                d.write(f"{website} | {email} | {pw} \n")
+        try:
+            with open("data.json", "r") as data_file:
+                # Reading old data
+                data = json.load(data_file)
+        except FileNotFoundError:
+            with open("data.json", "w") as data_file:
+                json.dump(new_data, data_file, indent=4)
+        
+        else:
+            # Updating old data with new data
+            data.update(new_data)
+            
+            # Saving updated data
+            with open("data.json", "w") as data_file:
+                json.dump(data, data_file, indent=4)
+                
+        finally:
             password_entry.delete(0, 'end')
             website_entry.delete(0, 'end')
+            messagebox.showinfo(title="Accepted", message="Accepted")
+            
+            
+# ---------------------------- SEARCH FUNCTION ------------------------------- #
+
+def search():
+    try:
+        website = website_entry.get()
+        with open("data.json", "r") as data_file:
+            data = json.load(data_file)
+            email = data[website]["email"]
+            pw = data[website]["password"]
+            messagebox.showinfo(title=website, message=f"For {website}:\nEmail: {email}\nPassword: {pw}")
+    except FileNotFoundError:
+        messagebox.showerror(title="Not Found", message="No entries have been made yet")
+        
+    except KeyError:
+        messagebox.showerror(title="Not Found", message="This website does not have an entry yet")
 
 # ---------------------------- UI SETUP ------------------------------- #
 window = tkinter.Tk()
@@ -60,9 +114,12 @@ canvas.grid(row=0, column=1)
 
 website_label = tkinter.Label(text="Website:", font=FONT_INFO)
 website_label.grid(row=1, column=0)
-website_entry = tkinter.Entry(width=38)
-website_entry.grid(row=1, column=1, columnspan=2)
+website_entry = tkinter.Entry(width=21)
+website_entry.grid(row=1, column=1)
 website_entry.focus()
+
+search_button = tkinter.Button(text="Search", command=search, width=13)
+search_button.grid(row=1, column=2)
 
 email_un_label = tkinter.Label(text="Email/Username:", font=FONT_INFO)
 email_un_label.grid(row=2, column=0)
